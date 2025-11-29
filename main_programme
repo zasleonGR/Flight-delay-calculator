@@ -1,10 +1,11 @@
-#5689512
 import pandas as pnd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+
+print("Programme is loading.... (loading times may vary depending on your device)")
 
 DataFrame = pnd.read_csv('Combined_Flights_2018.csv', usecols=['DayofMonth', 'Month', 'Airline', 'Origin', 'Dest', 'Cancelled', 'CRSDepTime', 'DepDelayMinutes']) #we only need 8/61 columns of the original CSV
 
@@ -64,44 +65,57 @@ set1 = set(temp) #set is used so that all location are printed once
 print("Please select one of the following origin locations:")
 print(set1)
 while True: #loop is used to prevent wrong input from the user
-    origin_sel = input("origin selection: ")
+    origin_sel = input("origin selection (e.g.: ABY): ")
     if origin_sel not in set1:
         print("ERROR: origin location does not exist. Please try again.")
+        print(" ")
     else:
         break
 
+print(" ")
 print("From the same list please choose a destination (WARNING: destination must be different from the origin chosen)")
 while True:
-    destination_sel = input("destination selection: ")
+    destination_sel = input("destination selection (e.g.: ATL): ")
     if destination_sel == origin_sel:
         print("ERROR: destination and origin locations are the same. Please try again.")
+        print(" ")
     elif destination_sel not in set1:
         print("ERROR: destination location does not exist. Please try again.")
+        print(" ")
     else:
-        break
+        #create dictionaries so that each string variable matches their corresponding encoded integer
+        temp = DataFrame['Origin']
+        temp2 = x_temp['Origin']
+        dict2 = {}
+        for A, B in zip(temp, temp2):
+            dict2[A] = B
 
-#create dictionaries so that each string variable matches their corresponding encoded integer
-temp = DataFrame['Airline']
-temp2 = x_temp['Airline']
-dict = {}
-for A, B in zip(temp, temp2):
-    dict[A] = B
+        temp = DataFrame['Dest']
+        temp2 = x_temp['Dest']
+        dict3 = {}
+        for A, B in zip(temp, temp2):
+            dict3[A] = B
 
-temp = DataFrame['Origin']
-temp2 = x_temp['Origin']
-dict2 = {}
-for A, B in zip(temp, temp2):
-    dict2[A] = B
+        enc_ori = dict2[origin_sel]
+        enc_des = dict3[destination_sel]
 
-temp = DataFrame['Dest']
-temp2 = x_temp['Dest']
-dict3 = {}
-for A, B in zip(temp, temp2):
-    dict3[A] = B
+        filt_array = x_temp[(x_temp.iloc[:, 3] == enc_ori) & (x_temp.iloc[:, 4] == enc_des)]
+        if filt_array.empty: #check if array is empty from non existent flights
+            print("ERROR: no available flights for your origin to that destination. Please select another location.")
+            print(" ")
+        else:
+            break
+print(" ")
 
-enc_ori = dict2[origin_sel]
-enc_des = dict3[destination_sel]
-
-filt_array = x_temp[(x_temp.iloc[:, 3] == enc_ori) & (x_temp.iloc[:, 4] == enc_des)]
 temp = mlr.predict(filt_array)
-print("Prediction for test set: {}".format(temp))
+final_array = x[(x.iloc[:, 3] == origin_sel) & (x.iloc[:, 4] == destination_sel)]
+final_array.loc[:, 'Approx_delay'] = temp
+print(final_array.to_string(index=False))
+print(" ")
+
+big_delay = final_array[final_array.iloc[:, 6] > 15.0]
+if big_delay.empty:
+    print("Your flight path will not have any long delays all year round")
+else:
+    print("WARNING: long delay predictions detected!")
+    print(big_delay.to_string(index=False))
