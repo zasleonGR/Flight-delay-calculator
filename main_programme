@@ -1,5 +1,6 @@
 import pandas as pnd
 import numpy as np
+import requests, zipfile, io
 from sklearn.linear_model import LinearRegression
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
@@ -7,7 +8,12 @@ from sklearn.preprocessing import LabelEncoder
 
 print("Programme is loading.... (loading times may vary depending on your device)")
 
-DataFrame = pnd.read_csv('Combined_Flights_2018.csv', usecols=['DayofMonth', 'Month', 'Airline', 'Origin', 'Dest', 'Cancelled', 'CRSDepTime', 'DepDelayMinutes']) #we only need 8/61 columns of the original CSV
+#load the compressed csv file from my github repository
+url = "https://raw.githubusercontent.com/zasleonGR/Flight-delay-calculator/main/smaller.csv.zip"
+response = requests.get(url)
+with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+    with z.open("smaller.csv") as f:
+        DataFrame = pnd.read_csv(f)
 
 DataFrame = DataFrame[DataFrame.iloc[:, 3] != True] #delete the cancelled flights (rows) from the data, so that it does not mess up our predictions
 DataFrame = DataFrame.replace(np.nan, 0.0) #replace all NaN values with 0
@@ -99,7 +105,7 @@ while True:
         enc_ori = dict2[origin_sel]
         enc_des = dict3[destination_sel]
 
-        filt_array = x_temp[(x_temp.iloc[:, 3] == enc_ori) & (x_temp.iloc[:, 4] == enc_des)]
+        filt_array = x_temp[(x_temp.iloc[:, 3] == enc_ori) & (x_temp.iloc[:, 4] == enc_des)] #save only the rows with the origin and destination given
         if filt_array.empty: #check if array is empty from non existent flights
             print("ERROR: no available flights for your origin to that destination. Please select another location.")
             print(" ")
@@ -110,7 +116,7 @@ print(" ")
 temp = mlr.predict(filt_array)
 final_array = x[(x.iloc[:, 3] == origin_sel) & (x.iloc[:, 4] == destination_sel)]
 final_array.loc[:, 'Approx_delay'] = temp
-print(final_array.to_string(index=False))
+print(final_array.to_string(index=False)) #".to_string" stops pandas from printing row numbers
 print(" ")
 
 big_delay = final_array[final_array.iloc[:, 6] > 15.0]
